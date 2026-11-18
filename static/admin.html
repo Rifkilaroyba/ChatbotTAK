@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin — Chatbot RAG</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%234f46e5%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } }
+  </script>
+  <style>
+    .bg-grid { background-image: radial-gradient(rgba(99,102,241,0.08) 1px, transparent 1px); background-size: 24px 24px; }
+    .typing-dot { animation: blink 1.4s infinite both; }
+    .typing-dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,80%,100% { opacity:.25 } 40% { opacity:1 } }
+  </style>
+</head>
+<body class="bg-[#FAFAFB] bg-grid text-zinc-900 font-sans antialiased min-h-screen">
+
+  <!-- ============ LOGIN ============ -->
+  <section id="loginSection" class="hidden min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white rounded-2xl border border-zinc-200 p-7">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center mb-5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      <h1 class="text-lg font-bold tracking-tight">Login Admin</h1>
+      <p class="text-sm text-zinc-500 mt-1">Masuk untuk mengelola dokumen dan role chatbot RAG.</p>
+      <form id="loginForm" class="mt-6 space-y-3">
+        <div>
+          <label for="loginUsername" class="block text-xs font-medium text-zinc-600 mb-1.5">Username</label>
+          <input id="loginUsername" type="text" required autocomplete="username" value="admin" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+        </div>
+        <div>
+          <label for="loginPassword" class="block text-xs font-medium text-zinc-600 mb-1.5">Password</label>
+          <input id="loginPassword" type="password" required autocomplete="current-password" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+        </div>
+        <p id="loginError" class="hidden text-xs text-rose-600 bg-rose-50 rounded-lg px-3 py-2"></p>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition cursor-pointer">Masuk</button>
+      </form>
+      <a href="/" class="block text-center text-xs text-zinc-500 hover:text-indigo-600 mt-4 transition">&larr; Kembali ke chatbot mahasiswa</a>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="dashboardSection" class="hidden">
+    <header class="bg-white/85 backdrop-blur-md border-b border-zinc-200/75 sticky top-0 z-20">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
+          </div>
+          <div class="leading-tight">
+            <span class="text-sm font-semibold tracking-tight block">Dashboard Admin</span>
+            <span class="text-[11px] text-zinc-500 block">Chatbot RAG Berbasis Role</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openQuotaModal()" class="text-xs font-medium px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 transition cursor-pointer">Kuota Groq API</button>
+          <button type="button" onclick="openChatModal()" class="text-xs font-medium px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer">Buka Chatbot</button>
+          <button id="logoutBtn" type="button" class="text-xs font-medium px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white transition cursor-pointer">Keluar</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <!-- Stats -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl border border-zinc-200 p-4">
+          <p class="text-[11px] font-medium uppercase tracking-wide text-zinc-400">Total Dokumen</p>
+          <p id="statDocs" class="text-2xl font-bold tracking-tight mt-1">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-zinc-200 p-4">
+          <p class="text-[11px] font-medium uppercase tracking-wide text-zinc-400">Total Chunks</p>
+          <p id="statChunks" class="text-2xl font-bold tracking-tight mt-1">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-zinc-200 p-4">
+          <p class="text-[11px] font-medium uppercase tracking-wide text-zinc-400">Dokumen Aktif</p>
+          <p id="statActive" class="text-2xl font-bold tracking-tight mt-1">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-zinc-200 p-4">
+          <p class="text-[11px] font-medium uppercase tracking-wide text-zinc-400">Total Role</p>
+          <p id="statRoles" class="text-2xl font-bold tracking-tight mt-1">0</p>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-5 gap-5">
+        <!-- Upload + Roles -->
+        <div class="lg:col-span-2 space-y-5">
+          <div class="bg-white rounded-2xl border border-zinc-200 p-5">
+            <h2 class="text-sm font-semibold">Upload Dokumen</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">PDF, DOCX, XLSX, CSV, TXT, atau MD.</p>
+            <form id="uploadForm" class="mt-4 space-y-3">
+              <div>
+                <label for="docTitle" class="block text-xs font-medium text-zinc-600 mb-1.5">Judul dokumen (opsional)</label>
+                <input id="docTitle" type="text" placeholder="Kosongkan untuk pakai nama file" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-zinc-600 mb-1.5">Role yang berhak mengakses</label>
+                <div id="roleCheckboxes" class="space-y-1.5 max-h-40 overflow-y-auto p-2.5 rounded-xl border border-zinc-200 bg-zinc-50/60">
+                  <p class="text-xs text-zinc-400">Memuat role...</p>
+                </div>
+              </div>
+              <div>
+                <label for="docFile" class="block text-xs font-medium text-zinc-600 mb-1.5">Berkas</label>
+                <label id="fileLabel" for="docFile" class="flex items-center justify-center gap-2 px-3 py-6 rounded-xl border-2 border-dashed border-zinc-200 hover:border-indigo-300 text-xs text-zinc-500 cursor-pointer transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                  <span>Klik untuk memilih berkas</span>
+                </label>
+                <input id="docFile" type="file" required accept=".pdf,.docx,.xlsx,.csv,.txt,.md" class="hidden" />
+              </div>
+              <p id="uploadMsg" class="hidden text-xs rounded-lg px-3 py-2"></p>
+              <button id="uploadBtn" type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition cursor-pointer">Upload &amp; Indeks</button>
+            </form>
+          </div>
+
+          <!-- Manajemen Role -->
+          <div class="bg-white rounded-2xl border border-zinc-200 p-5">
+            <h2 class="text-sm font-semibold">Manajemen Role</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">Tambah atau hapus role pengguna chatbot.</p>
+            <form id="roleForm" class="mt-4 flex gap-2">
+              <input id="roleName" type="text" required placeholder="nama role (mis. dosen)" class="flex-1 px-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+              <button type="submit" class="px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-medium transition cursor-pointer">Tambah</button>
+            </form>
+            <div id="roleList" class="mt-3 space-y-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="lg:col-span-3">
+          <div class="bg-white rounded-2xl border border-zinc-200 p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold">Dokumen Pengetahuan</h2>
+              <button type="button" onclick="loadDocuments()" class="text-xs font-medium text-zinc-500 hover:text-indigo-600 transition cursor-pointer">Muat ulang</button>
+            </div>
+            <div id="docList" class="mt-4 space-y-2.5">
+              <p class="text-xs text-zinc-400">Memuat dokumen...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ============ CHUNKS MODAL ============ -->
+  <div id="chunksModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl border border-zinc-200 my-4 flex flex-col max-h-[88vh]">
+      <div class="flex items-start justify-between gap-4 p-5 border-b border-zinc-100">
+        <div class="min-w-0">
+          <h3 id="modalDocTitle" class="text-base font-semibold truncate">Chunks</h3>
+          <p id="modalDocMeta" class="text-xs text-zinc-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="closeModal('chunksModal')" class="w-8 h-8 rounded-lg hover:bg-zinc-100 text-zinc-500 flex items-center justify-center transition cursor-pointer" aria-label="Tutup">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="modalChunksList" class="p-5 overflow-y-auto space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ============ QUOTA MODAL ============ -->
+  <div id="quotaModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-zinc-200 my-4 flex flex-col max-h-[88vh]">
+      <div class="flex items-start justify-between gap-4 p-5 border-b border-zinc-100">
+        <div>
+          <h3 class="text-base font-semibold">Kuota Groq API</h3>
+          <p id="quotaModelInfo" class="text-xs text-zinc-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="closeModal('quotaModal')" class="w-8 h-8 rounded-lg hover:bg-zinc-100 text-zinc-500 flex items-center justify-center transition cursor-pointer" aria-label="Tutup">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="quotaContent" class="p-5 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- ============ CHATBOT MODAL ============ -->
+  <div id="chatModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-zinc-200 flex flex-col h-[88vh]">
+      <div class="flex items-center justify-between gap-3 p-4 border-b border-zinc-100">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <button id="toggleHistoryBtn" type="button" onclick="toggleHistoryPanel()" class="w-8 h-8 rounded-lg hover:bg-zinc-100 text-zinc-500 flex items-center justify-center transition cursor-pointer" aria-label="Riwayat sesi">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="leading-tight min-w-0">
+            <span class="text-sm font-semibold block">Uji Chatbot</span>
+            <span class="text-[11px] text-zinc-500 block">Pilih role untuk menguji pemisahan akses</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="chatRoleSelect" class="text-xs rounded-lg border border-zinc-200 px-2.5 py-1.5 focus:border-indigo-400 focus:outline-none cursor-pointer"></select>
+          <button type="button" onclick="newAdminSession()" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition cursor-pointer">+ Chat Baru</button>
+          <button type="button" onclick="closeModal('chatModal')" class="w-8 h-8 rounded-lg hover:bg-zinc-100 text-zinc-500 flex items-center justify-center transition cursor-pointer" aria-label="Tutup">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 flex min-h-0">
+        <aside id="adminHistoryPanel" class="hidden sm:block w-56 shrink-0 border-r border-zinc-100 overflow-y-auto p-3 space-y-1.5 bg-zinc-50/50"></aside>
+        <div class="flex-1 flex flex-col min-w-0">
+          <div id="adminChatBox" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <p id="adminChatEmpty" class="text-xs text-zinc-400 text-center py-8">Mulai percakapan untuk menguji jawaban chatbot per role.</p>
+          </div>
+          <div id="adminChatFooter" class="p-3 border-t border-zinc-100">
+            <form id="adminChatForm" class="flex items-end gap-2">
+              <textarea id="adminQuestionInput" rows="1" required placeholder="Tulis pertanyaan uji..." class="flex-1 resize-none px-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition max-h-32"></textarea>
+              <button id="adminSendBtn" type="submit" class="shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white flex items-center justify-center transition cursor-pointer" aria-label="Kirim">
+                <svg style="width:18px;height:18px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-sm shadow-lg">
+    <span id="toastText"></span>
+  </div>
+
+  <script src="/static/shared-md.js"></script>
+  <script>
+    const TOKEN_KEY = "modul2ai_admin_token";
+    const SESSIONS_KEY = "modul2ai_admin_sessions";
+    const ACTIVE_KEY = "modul2ai_admin_active_session";
+
+    const getToken = () => localStorage.getItem(TOKEN_KEY) || "";
+    const authHeaders = () => ({ Authorization: "Bearer " + getToken() });
+
+    function showToast(message, isError) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastText").textContent = message;
+      toast.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-xl text-white text-sm shadow-lg " + (isError ? "bg-rose-600" : "bg-zinc-900");
+      setTimeout(() => toast.classList.add("hidden"), 3200);
+    }
+
+    function showLogin() {
+      document.getElementById("loginSection").classList.remove("hidden");
+      document.getElementById("dashboardSection").classList.add("hidden");
+    }
+    function showDashboard() {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("dashboardSection").classList.remove("hidden");
+      loadRolesForUpload();
+      loadDocuments();
+    }
+
+    async function checkAuth() {
+      if (!getToken()) { showLogin(); return; }
+      try {
+        const res = await fetch("/api/auth/me", { headers: authHeaders() });
+        if (res.ok) showDashboard();
+        else { localStorage.removeItem(TOKEN_KEY); showLogin(); }
+      } catch (e) { showLogin(); }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const errBox = document.getElementById("loginError");
+      errBox.classList.add("hidden");
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.getElementById("loginUsername").value,
+            password: document.getElementById("loginPassword").value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { errBox.textContent = data.detail || "Login gagal."; errBox.classList.remove("hidden"); return; }
+        localStorage.setItem(TOKEN_KEY, data.token);
+        document.getElementById("loginPassword").value = "";
+        showDashboard();
+      } catch (err) {
+        errBox.textContent = "Tidak dapat terhubung ke server."; errBox.classList.remove("hidden");
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", function () {
+      localStorage.removeItem(TOKEN_KEY);
+      showLogin();
+    });
+
+    // ---------- Roles ----------
+    let cachedRoles = [];
+
+    async function loadRolesForUpload() {
+      const box = document.getElementById("roleCheckboxes");
+      const list = document.getElementById("roleList");
+      const select = document.getElementById("chatRoleSelect");
+      try {
+        const res = await fetch("/api/roles");
+        const data = await res.json();
+        cachedRoles = data.roles || [];
+        document.getElementById("statRoles").textContent = cachedRoles.length;
+
+        box.innerHTML = cachedRoles.length
+          ? cachedRoles.map((r) =>
+              '<label class="flex items-center gap-2 text-xs text-zinc-700 cursor-pointer">'
+              + '<input type="checkbox" name="roleId" value="' + r.id + '"' + (r.name === "mahasiswa" ? " checked" : "")
+              + ' class="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-400 cursor-pointer" />'
+              + '<span class="font-medium">' + escapeHtml(r.name) + '</span>'
+              + '<span class="text-zinc-400">(' + r.document_count + ' dok)</span></label>'
+            ).join("")
+          : '<p class="text-xs text-zinc-400">Belum ada role.</p>';
+
+        list.innerHTML = cachedRoles.map((r) =>
+          '<div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-100">'
+          + '<div class="min-w-0"><p class="text-xs font-medium text-zinc-800 truncate">' + escapeHtml(r.name) + '</p>'
+          + '<p class="text-[11px] text-zinc-400 truncate">' + escapeHtml(r.description || "-") + '</p></div>'
+          + '<button type="button" onclick="deleteRole(' + r.id + ', \'' + escapeHtml(r.name).replace(/'/g, "") + '\')" class="shrink-0 text-[11px] font-medium text-rose-600 hover:text-rose-700 cursor-pointer">Hapus</button></div>'
+        ).join("");
+
+        select.innerHTML = cachedRoles.map((r) => '<option value="' + escapeHtml(r.name) + '">' + escapeHtml(r.name) + "</option>").join("");
+      } catch (e) {
+        box.innerHTML = '<p class="text-xs text-rose-500">Gagal memuat role.</p>';
+      }
+    }
+
+    document.getElementById("roleForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const input = document.getElementById("roleName");
+      const name = input.value.trim();
+      if (!name) return;
+      try {
+        const res = await fetch("/api/roles", {
+          method: "POST",
+          headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+          body: JSON.stringify({ name: name, description: "" }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.detail || "Gagal menambah role.", true); return; }
+        input.value = "";
+        showToast("Role '" + name.toLowerCase() + "' berhasil ditambahkan.");
+        loadRolesForUpload();
+      } catch (err) { showToast("Gagal terhubung ke server.", true); }
+    });
+
+    async function deleteRole(roleId, roleName) {
+      if (!confirm("Hapus role '" + roleName + "'? Relasi dokumen ke role ini ikut terhapus.")) return;
+      try {
+        const res = await fetch("/api/roles/" + roleId, { method: "DELETE", headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.detail || "Gagal menghapus role.", true); return; }
+        showToast(data.message);
+        loadRolesForUpload();
+        loadDocuments();
+      } catch (err) { showToast("Gagal terhubung ke server.", true); }
+    }
+
+    // ---------- Documents ----------
+    document.getElementById("docFile").addEventListener("change", function () {
+      const label = document.getElementById("fileLabel");
+      label.querySelector("span").textContent = this.files[0] ? this.files[0].name : "Klik untuk memilih berkas";
+    });
+
+    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const msg = document.getElementById("uploadMsg");
+      const btn = document.getElementById("uploadBtn");
+      const fileInput = document.getElementById("docFile");
+      const roleIds = Array.from(document.querySelectorAll('input[name="roleId"]:checked')).map((c) => Number(c.value));
+
+      msg.classList.add("hidden");
+      if (!fileInput.files[0]) { showToast("Pilih berkas terlebih dahulu.", true); return; }
+      if (!roleIds.length) { showToast("Pilih minimal satu role.", true); return; }
+
+      const fd = new FormData();
+      fd.append("file", fileInput.files[0]);
+      fd.append("title", document.getElementById("docTitle").value);
+      fd.append("role_ids", JSON.stringify(roleIds));
+
+      btn.disabled = true; btn.textContent = "Mengindeks...";
+      try {
+        const res = await fetch("/api/documents/upload", { method: "POST", headers: authHeaders(), body: fd });
+        const data = await res.json();
+        msg.textContent = res.ok ? data.message : (data.detail || "Upload gagal.");
+        msg.className = "text-xs rounded-lg px-3 py-2 " + (res.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700");
+        if (res.ok) {
+          this.reset();
+          document.getElementById("fileLabel").querySelector("span").textContent = "Klik untuk memilih berkas";
+          loadDocuments(); loadRolesForUpload();
+        }
+      } catch (err) {
+        msg.textContent = "Gagal terhubung ke server.";
+        msg.className = "text-xs rounded-lg px-3 py-2 bg-rose-50 text-rose-700";
+      } finally {
+        btn.disabled = false; btn.textContent = "Upload & Indeks";
+      }
+    });
+
+    async function loadDocuments() {
+      const list = document.getElementById("docList");
+      try {
+        const res = await fetch("/api/documents", { headers: authHeaders() });
+        if (res.status === 401) { localStorage.removeItem(TOKEN_KEY); showLogin(); return; }
+        const data = await res.json();
+        const docs = data.documents || [];
+
+        document.getElementById("statDocs").textContent = docs.length;
+        document.getElementById("statChunks").textContent = docs.reduce((s, d) => s + (d.total_chunks || 0), 0);
+        document.getElementById("statActive").textContent = docs.filter((d) => d.is_active).length;
+
+        if (!docs.length) { list.innerHTML = '<p class="text-xs text-zinc-400">Belum ada dokumen. Upload dokumen pertama Anda.</p>'; return; }
+
+        list.innerHTML = docs.map((d) => {
+          const roleBadges = (d.roles || []).map((r) =>
+            '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700">' + escapeHtml(r.name) + "</span>").join(" ");
+          const statusBadge = d.is_active
+            ? '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700">aktif</span>'
+            : '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500">nonaktif</span>';
+          return '<div class="p-3.5 rounded-xl border border-zinc-200 hover:border-zinc-300 transition">'
+            + '<div class="flex items-start justify-between gap-3">'
+            + '<div class="min-w-0"><p class="text-sm font-medium text-zinc-900 truncate">' + escapeHtml(d.title) + "</p>"
+            + '<p class="text-[11px] text-zinc-400 mt-0.5">' + escapeHtml(String(d.file_type).toUpperCase()) + " · " + d.total_chunks + " chunks</p>"
+            + '<div class="flex flex-wrap items-center gap-1 mt-1.5">' + statusBadge + roleBadges + "</div></div>"
+            + '<div class="flex items-center gap-1.5 shrink-0">'
+            + '<button type="button" onclick="viewChunks(' + d.id + ')" class="text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition cursor-pointer">Lihat Chunks</button>'
+            + '<button type="button" onclick="toggleDoc(' + d.id + ')" class="text-[11px] font-medium px-2.5 py-1.5 rounded-lg ' + (d.is_active ? "bg-amber-50 hover:bg-amber-100 text-amber-700" : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700") + ' transition cursor-pointer">' + (d.is_active ? "Nonaktifkan" : "Aktifkan") + "</button>"
+            + '<button type="button" onclick="deleteDoc(' + d.id + ')" class="text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer">Hapus</button>'
+            + "</div></div></div>";
+        }).join("");
+      } catch (err) {
+        list.innerHTML = '<p class="text-xs text-rose-500">Gagal memuat dokumen.</p>';
+      }
+    }
+
+    async function toggleDoc(docId) {
+      try {
+        const res = await fetch("/api/documents/" + docId + "/toggle", { method: "PATCH", headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.detail || "Gagal mengubah status.", true); return; }
+        showToast(data.message);
+        loadDocuments();
+      } catch (err) { showToast("Gagal terhubung ke server.", true); }
+    }
+
+    async function deleteDoc(docId) {
+      if (!confirm("Hapus dokumen ini beserta seluruh chunk-nya?")) return;
+      try {
+        const res = await fetch("/api/documents/" + docId, { method: "DELETE", headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.detail || "Gagal menghapus dokumen.", true); return; }
+        showToast(data.message);
+        loadDocuments(); loadRolesForUpload();
+      } catch (err) { showToast("Gagal terhubung ke server.", true); }
+    }
+
+    async function viewChunks(docId) {
+      const box = document.getElementById("modalChunksList");
+      document.getElementById("modalDocTitle").textContent = "Memuat...";
+      document.getElementById("modalDocMeta").textContent = "";
+      box.innerHTML = '<p class="text-xs text-zinc-400">Memuat chunks...</p>';
+      openModal("chunksModal");
+      try {
+        const res = await fetch("/api/documents/" + docId + "/chunks", { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { box.innerHTML = '<p class="text-xs text-rose-600">' + escapeHtml(data.detail || "Gagal memuat.") + "</p>"; return; }
+        document.getElementById("modalDocTitle").textContent = data.document.title;
+        document.getElementById("modalDocMeta").textContent =
+          String(data.document.file_type).toUpperCase() + " · " + data.chunks.length + " chunks";
+        box.innerHTML = data.chunks.map((c) =>
+          '<div class="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">'
+          + '<p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-600 mb-1.5">Chunk #' + c.chunk_index + "</p>"
+          + '<p class="text-xs text-zinc-600 whitespace-pre-wrap break-words leading-relaxed">' + escapeHtml(c.text) + "</p></div>"
+        ).join("");
+      } catch (err) {
+        box.innerHTML = '<p class="text-xs text-rose-600">Gagal memuat chunks.</p>';
+      }
+    }
+
+    // ---------- Quota ----------
+    async function openQuotaModal() {
+      const box = document.getElementById("quotaContent");
+      box.innerHTML = '<p class="text-xs text-zinc-400">Memuat data kuota...</p>';
+      openModal("quotaModal");
+      try {
+        const res = await fetch("/api/admin/groq-quota", { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok) { box.innerHTML = '<p class="text-xs text-rose-600">' + escapeHtml(data.detail || "Gagal memuat.") + "</p>"; return; }
+
+        document.getElementById("quotaModelInfo").textContent =
+          "Model: " + data.configured_model + (data.has_api_key ? " · API key terkonfigurasi" : " · API key belum diisi");
+
+        const l = data.latest;
+        const card = (label, value, sub) =>
+          '<div class="p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60">'
+          + '<p class="text-[11px] font-medium uppercase tracking-wide text-zinc-400">' + label + "</p>"
+          + '<p class="text-lg font-bold tracking-tight mt-0.5">' + value + "</p>"
+          + (sub ? '<p class="text-[11px] text-zinc-400 mt-0.5">' + sub + "</p>" : "") + "</div>";
+
+        let html = '<div class="grid grid-cols-2 gap-3">';
+        if (l) {
+          html += card("Sisa Request (RPD)",
+            (l.remaining_requests != null ? l.remaining_requests : "-") + " / " + (l.limit_requests != null ? l.limit_requests : "-"),
+            "Reset: " + (l.reset_requests_label || "-"));
+          html += card("Sisa Token (TPM)",
+            (l.remaining_tokens != null ? l.remaining_tokens : "-") + " / " + (l.limit_tokens != null ? l.limit_tokens : "-"),
+            "Reset: " + (l.reset_tokens_label || "-"));
+        }
+        html += card("Request Hari Ini", data.today.requests_today, data.today.total_tokens_today + " token");
+        html += card("Total Request", data.total.total_requests, data.total.total_tokens + " token");
+        html += "</div>";
+
+        if (!l) html += '<p class="text-xs text-zinc-400 mt-3">Belum ada header rate-limit tercatat. Kirim satu pertanyaan melalui chatbot untuk mengisinya.</p>';
+
+        if (data.recent_logs && data.recent_logs.length) {
+          html += '<p class="text-xs font-semibold text-zinc-700 mt-5 mb-2">10 Pemanggilan Terakhir</p>'
+            + '<div class="overflow-x-auto rounded-xl border border-zinc-200"><table class="min-w-full text-left text-[11px]">'
+            + '<thead class="bg-zinc-50"><tr><th class="px-3 py-2 font-semibold text-zinc-600">Model</th><th class="px-3 py-2 font-semibold text-zinc-600">Prompt</th><th class="px-3 py-2 font-semibold text-zinc-600">Output</th><th class="px-3 py-2 font-semibold text-zinc-600">Total</th><th class="px-3 py-2 font-semibold text-zinc-600">Status</th></tr></thead><tbody class="divide-y divide-zinc-100">';
+          data.recent_logs.forEach((log) => {
+            html += '<tr><td class="px-3 py-2 text-zinc-700">' + escapeHtml(log.model) + "</td>"
+              + '<td class="px-3 py-2 text-zinc-500">' + log.prompt_tokens + "</td>"
+              + '<td class="px-3 py-2 text-zinc-500">' + log.completion_tokens + "</td>"
+              + '<td class="px-3 py-2 text-zinc-500">' + log.total_tokens + "</td>"
+              + '<td class="px-3 py-2"><span class="' + (log.status === "success" ? "text-emerald-600" : "text-rose-600") + '">' + escapeHtml(log.status) + "</span></td></tr>";
+          });
+          html += "</tbody></table></div>";
+        }
+        box.innerHTML = html;
+      } catch (err) {
+        box.innerHTML = '<p class="text-xs text-rose-600">Gagal memuat data kuota.</p>';
+      }
+    }
+
+    // ---------- Admin chat (multi-session) ----------
+    function getAdminSessions() {
+      try { return JSON.parse(localStorage.getItem(SESSIONS_KEY) || "[]"); } catch (e) { return []; }
+    }
+    function saveAdminSessions(sessions) {
+      try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions.slice(-20))); } catch (e) {}
+    }
+    function getActiveSessionId() { return localStorage.getItem(ACTIVE_KEY) || ""; }
+    function setActiveSessionId(id) { localStorage.setItem(ACTIVE_KEY, id); }
+
+    function ensureActiveSession() {
+      let sessions = getAdminSessions();
+      let id = getActiveSessionId();
+      if (!sessions.find((s) => s.id === id)) {
+        if (sessions.length) { id = sessions[sessions.length - 1].id; }
+        else {
+          id = "s" + Date.now();
+          sessions.push({ id: id, title: "Sesi baru", created_at: new Date().toISOString(), messages: [] });
+          saveAdminSessions(sessions);
+        }
+        setActiveSessionId(id);
+      }
+      return id;
+    }
+
+    function getActiveMessages() {
+      const s = getAdminSessions().find((x) => x.id === getActiveSessionId());
+      return s ? s.messages : [];
+    }
+
+    function pushMessageToActiveSession(msg) {
+      const sessions = getAdminSessions();
+      const s = sessions.find((x) => x.id === getActiveSessionId());
+      if (!s) return;
+      s.messages.push(msg);
+      if (s.title === "Sesi baru" && msg.role === "user") s.title = msg.content.slice(0, 40);
+      saveAdminSessions(sessions);
+      renderAdminSessionsList();
+    }
+
+    function newAdminSession() {
+      const sessions = getAdminSessions();
+      const id = "s" + Date.now();
+      sessions.push({ id: id, title: "Sesi baru", created_at: new Date().toISOString(), messages: [] });
+      saveAdminSessions(sessions);
+      setActiveSessionId(id);
+      renderAdminChatHistory();
+      renderAdminSessionsList();
+    }
+
+    function switchSession(id) {
+      setActiveSessionId(id);
+      renderAdminChatHistory();
+      renderAdminSessionsList();
+    }
+
+    function deleteSession(id, ev) {
+      ev.stopPropagation();
+      const sessions = getAdminSessions().filter((s) => s.id !== id);
+      saveAdminSessions(sessions);
+      if (getActiveSessionId() === id) localStorage.removeItem(ACTIVE_KEY);
+      ensureActiveSession();
+      renderAdminChatHistory();
+      renderAdminSessionsList();
+    }
+
+    function formatSessionTime(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) + " " +
+               d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      } catch (e) { return ""; }
+    }
+
+    function renderAdminSessionsList() {
+      const panel = document.getElementById("adminHistoryPanel");
+      const sessions = getAdminSessions().slice().reverse();
+      const activeId = getActiveSessionId();
+      if (!sessions.length) { panel.innerHTML = '<p class="text-[11px] text-zinc-400 px-1">Belum ada sesi.</p>'; return; }
+      panel.innerHTML = sessions.map((s) =>
+        '<div onclick="switchSession(\'' + s.id + '\')" class="group px-2.5 py-2 rounded-lg cursor-pointer transition '
+        + (s.id === activeId ? "bg-indigo-50 border border-indigo-200" : "hover:bg-white border border-transparent") + '">'
+        + '<div class="flex items-start justify-between gap-1.5">'
+        + '<p class="text-[11px] font-medium text-zinc-700 truncate flex-1">' + escapeHtml(s.title) + "</p>"
+        + '<button type="button" onclick="deleteSession(\'' + s.id + '\', event)" class="opacity-0 group-hover:opacity-100 text-[10px] text-rose-500 hover:text-rose-700 transition cursor-pointer">&times;</button></div>'
+        + '<p class="text-[10px] text-zinc-400 mt-0.5">' + formatSessionTime(s.created_at) + " · " + s.messages.length + " pesan</p></div>"
+      ).join("");
+    }
+
+    function appendAdminMessageEl(role, content, sources) {
+      const box = document.getElementById("adminChatBox");
+      document.getElementById("adminChatEmpty").classList.add("hidden");
+      const el = document.createElement("div");
+      if (role === "user") {
+        el.className = "flex justify-end";
+        el.innerHTML = '<div class="max-w-[85%] bg-indigo-600 text-white rounded-2xl rounded-br-md px-3.5 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words">' + escapeHtml(content) + "</div>";
+      } else {
+        let src = "";
+        if (sources && sources.length) {
+          src = '<div class="mt-2 pt-2 border-t border-zinc-100 flex flex-wrap gap-1">'
+            + sources.map((s) => '<span class="text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-600">' + escapeHtml(s.title) + "</span>").join("") + "</div>";
+        }
+        el.className = "flex justify-start";
+        el.innerHTML = '<div class="max-w-[90%] bg-white border border-zinc-200 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-xs text-zinc-700">'
+          + formatMarkdown(content) + src + "</div>";
+      }
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+      return el;
+    }
+
+    function renderAdminChatHistory() {
+      const box = document.getElementById("adminChatBox");
+      box.innerHTML = '<p id="adminChatEmpty" class="text-xs text-zinc-400 text-center py-8">Mulai percakapan untuk menguji jawaban chatbot per role.</p>';
+      const messages = getActiveMessages();
+      messages.forEach((m) => appendAdminMessageEl(m.role, m.content, m.sources));
+    }
+
+    function toggleHistoryPanel() {
+      document.getElementById("adminHistoryPanel").classList.toggle("hidden");
+    }
+
+    document.getElementById("adminChatForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const input = document.getElementById("adminQuestionInput");
+      const btn = document.getElementById("adminSendBtn");
+      const q = input.value.trim();
+      if (!q) return;
+      const role = document.getElementById("chatRoleSelect").value || "mahasiswa";
+
+      input.value = ""; input.style.height = "auto";
+      appendAdminMessageEl("user", q);
+      pushMessageToActiveSession({ role: "user", content: q });
+
+      const loading = appendAdminMessageEl("bot", "...");
+      loading.innerHTML = '<div class="bg-white border border-zinc-200 rounded-2xl rounded-bl-md px-3.5 py-3 flex items-center gap-1.5">'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span>'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span>'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span></div>';
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: q, role: role }),
+        });
+        const data = await res.json();
+        loading.remove();
+        const answer = res.ok ? data.answer : (data.detail || "Terjadi kesalahan.");
+        const sources = res.ok ? (data.sources || []) : [];
+        appendAdminMessageEl("bot", answer, sources);
+        pushMessageToActiveSession({ role: "bot", content: answer, sources: sources });
+      } catch (err) {
+        loading.remove();
+        appendAdminMessageEl("bot", "Tidak dapat terhubung ke server.");
+      } finally {
+        btn.disabled = false; input.focus();
+      }
+    });
+
+    document.getElementById("adminQuestionInput").addEventListener("input", function () {
+      this.style.height = "auto";
+      this.style.height = Math.min(this.scrollHeight, 128) + "px";
+    });
+    document.getElementById("adminQuestionInput").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("adminChatForm").requestSubmit(); }
+    });
+
+    function openChatModal() {
+      ensureActiveSession();
+      renderAdminChatHistory();
+      renderAdminSessionsList();
+      openModal("chatModal");
+      document.getElementById("adminQuestionInput").focus();
+    }
+
+    // ---------- Modal helpers ----------
+    function openModal(id) {
+      document.getElementById(id).classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+    ["chunksModal", "quotaModal", "chatModal"].forEach((id) => {
+      const m = document.getElementById(id);
+      m.addEventListener("click", function (e) { if (e.target === m) closeModal(id); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") ["chunksModal", "quotaModal", "chatModal"].forEach(closeModal);
+    });
+
+    checkAuth();
+  </script>
+</body>
+</html>

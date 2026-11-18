@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatbot RAG — Asisten Dokumen Akademik</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%234f46e5%22/%3E%3Ctext x=%2216%22 y=%2222%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } }
+  </script>
+  <style>
+    .bg-grid { background-image: radial-gradient(rgba(99,102,241,0.08) 1px, transparent 1px); background-size: 24px 24px; }
+    .typing-dot { animation: blink 1.4s infinite both; }
+    .typing-dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,80%,100% { opacity:.25 } 40% { opacity:1 } }
+  </style>
+</head>
+<body class="bg-[#FAFAFB] bg-grid text-zinc-900 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="bg-white/85 backdrop-blur-md border-b border-zinc-200/75 sticky top-0 z-20">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-sm shadow-indigo-500/25">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+        </div>
+        <div class="leading-tight">
+          <span class="text-sm font-semibold tracking-tight text-zinc-900 block">Chatbot RAG</span>
+          <span class="text-[11px] text-zinc-500 block">Asisten Dokumen Akademik</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="clearChatBtn" type="button" onclick="clearPublicChatHistory()" class="hidden text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition cursor-pointer">+ Chat Baru</button>
+        <a href="/admin" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white transition">
+          <svg class="w-3.5 h-3.5 text-zinc-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          Login Admin
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Chat area -->
+  <main class="flex-1 w-full">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+      <div id="chatBox" class="space-y-4 pb-4">
+
+        <!-- Welcome state -->
+        <div id="welcomeState">
+          <div class="bg-white rounded-2xl border border-zinc-200/80 p-6 sm:p-8 text-center">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center mb-4">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">Selamat datang di Asisten Dokumen Akademik</h1>
+            <p class="mt-2 text-sm text-zinc-500 max-w-lg mx-auto">Tanyakan apa saja seputar layanan SSC, jam operasional, alur menghubungi unit layanan, maupun ketentuan TAK. Jawaban disertai sumber referensi yang bisa diklik.</p>
+            <div class="mt-6 grid sm:grid-cols-2 gap-2.5 text-left">
+              <button type="button" onclick="askSuggestion(this)" data-q="Bagaimana alur menghubungi SSC Telkom University?" class="group p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left cursor-pointer">
+                <span class="block text-sm font-medium text-zinc-800 group-hover:text-indigo-700">Alur menghubungi SSC</span>
+                <span class="block text-xs text-zinc-500 mt-0.5">Langkah demi langkah dari identitas sampai follow-up</span>
+              </button>
+              <button type="button" onclick="askSuggestion(this)" data-q="Jam berapa SSC buka dan hari apa saja layanannya?" class="group p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left cursor-pointer">
+                <span class="block text-sm font-medium text-zinc-800 group-hover:text-indigo-700">Jam operasional SSC</span>
+                <span class="block text-xs text-zinc-500 mt-0.5">Hari layanan dan jam buka kantor</span>
+              </button>
+              <button type="button" onclick="askSuggestion(this)" data-q="Apa itu TAK dan bagaimana ketentuan poinnya?" class="group p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left cursor-pointer">
+                <span class="block text-sm font-medium text-zinc-800 group-hover:text-indigo-700">Ketentuan TAK</span>
+                <span class="block text-xs text-zinc-500 mt-0.5">Definisi, kategori, dan syarat poin TAK</span>
+              </button>
+              <button type="button" onclick="askSuggestion(this)" data-q="Kemana saya harus menghubungi jika ada kendala TAK atau SKPI?" class="group p-3.5 rounded-xl border border-zinc-200 bg-zinc-50/60 hover:border-indigo-300 hover:bg-indigo-50/50 transition text-left cursor-pointer">
+                <span class="block text-sm font-medium text-zinc-800 group-hover:text-indigo-700">Kanal layanan TAK/SKPI</span>
+                <span class="block text-xs text-zinc-500 mt-0.5">Kontak unit yang tepat sesuai kategori</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Composer -->
+  <div class="sticky bottom-0 bg-gradient-to-t from-[#FAFAFB] via-[#FAFAFB] to-transparent pt-4 pb-4">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <form id="chatForm" class="bg-white rounded-2xl border border-zinc-200 p-2 flex items-end gap-2 focus-within:border-indigo-400 transition">
+        <textarea id="questionInput" rows="1" required placeholder="Tanyakan sesuatu tentang layanan SSC atau TAK..." class="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none max-h-40"></textarea>
+        <button id="sendBtn" type="submit" class="shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition cursor-pointer" aria-label="Kirim pertanyaan">
+          <svg class="w-4.5 h-4.5" style="width:18px;height:18px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
+      </form>
+      <p class="text-center text-[11px] text-zinc-400 mt-2">Jawaban dihasilkan dari dokumen resmi yang diindeks untuk role <span class="font-medium text-zinc-500">mahasiswa</span>.</p>
+    </div>
+  </div>
+
+  <!-- Source preview modal -->
+  <div id="sourceModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl border border-zinc-200 my-4 flex flex-col max-h-[88vh]">
+      <div class="flex items-start justify-between gap-4 p-5 border-b border-zinc-100">
+        <div class="min-w-0">
+          <h3 id="sourceModalTitle" class="text-base font-semibold text-zinc-900 truncate">Dokumen</h3>
+          <p id="sourceModalMeta" class="text-xs text-zinc-500 mt-0.5"></p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <a id="sourceModalDownload" href="#" target="_blank" rel="noopener" class="text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">Unduh</a>
+          <button type="button" onclick="closeSourceModal()" class="w-8 h-8 rounded-lg hover:bg-zinc-100 text-zinc-500 flex items-center justify-center transition cursor-pointer" aria-label="Tutup">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      </div>
+      <div id="sourceModalBody" class="p-5 overflow-y-auto text-sm text-zinc-700"></div>
+    </div>
+  </div>
+
+  <script src="/static/shared-md.js"></script>
+  <script>
+    const HISTORY_KEY = "modul2ai_public_chat";
+    const chatBox = document.getElementById("chatBox");
+    const welcomeState = document.getElementById("welcomeState");
+    const clearChatBtn = document.getElementById("clearChatBtn");
+    const chatForm = document.getElementById("chatForm");
+    const questionInput = document.getElementById("questionInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function getPublicHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { return []; }
+    }
+    function savePublicHistory(messages) {
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-60))); } catch (e) {}
+    }
+    function pushHistory(entry) {
+      const h = getPublicHistory(); h.push(entry); savePublicHistory(h);
+    }
+    function clearPublicChatHistory() {
+      savePublicHistory([]);
+      chatBox.querySelectorAll("[data-msg]").forEach((el) => el.remove());
+      welcomeState.classList.remove("hidden");
+      clearChatBtn.classList.add("hidden");
+      questionInput.focus();
+    }
+
+    function scrollToBottom() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
+    function appendUserMessage(text) {
+      welcomeState.classList.add("hidden");
+      clearChatBtn.classList.remove("hidden");
+      const el = document.createElement("div");
+      el.setAttribute("data-msg", "user");
+      el.className = "flex justify-end";
+      el.innerHTML = '<div class="max-w-[85%] sm:max-w-[75%] bg-indigo-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">' + escapeHtml(text) + "</div>";
+      chatBox.appendChild(el);
+      scrollToBottom();
+    }
+
+    function sourceCardsHtml(sources) {
+      if (!sources || !sources.length) return "";
+      let out = '<div class="mt-3 pt-3 border-t border-zinc-100"><p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 mb-2">Sumber Referensi</p><div class="grid sm:grid-cols-2 gap-2">';
+      sources.forEach((s) => {
+        out += '<button type="button" onclick="openSourceModal(' + Number(s.document_id) + ')" class="group text-left p-2.5 rounded-xl border border-zinc-200 bg-zinc-50/70 hover:border-indigo-300 hover:bg-indigo-50/50 transition cursor-pointer">'
+          + '<span class="flex items-center gap-2">'
+          + '<svg class="w-3.5 h-3.5 text-zinc-400 group-hover:text-indigo-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>'
+          + '<span class="text-xs font-medium text-zinc-700 group-hover:text-indigo-700 truncate">' + escapeHtml(s.title) + "</span></span>"
+          + '<span class="block text-[11px] text-zinc-400 mt-1">Relevansi ' + (Number(s.score) || 0).toFixed(2) + " &middot; klik untuk melihat isi</span></button>";
+      });
+      return out + "</div></div>";
+    }
+
+    function appendBotMessage(answer, sources) {
+      welcomeState.classList.add("hidden");
+      clearChatBtn.classList.remove("hidden");
+      const el = document.createElement("div");
+      el.setAttribute("data-msg", "bot");
+      el.className = "flex justify-start";
+      el.innerHTML = '<div class="max-w-[92%] sm:max-w-[85%] bg-white border border-zinc-200 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-zinc-700">'
+        + '<div class="prose-chat">' + formatMarkdown(answer) + "</div>" + sourceCardsHtml(sources) + "</div>";
+      chatBox.appendChild(el);
+      scrollToBottom();
+    }
+
+    function appendLoading() {
+      const el = document.createElement("div");
+      el.id = "loadingBubble";
+      el.setAttribute("data-msg", "loading");
+      el.className = "flex justify-start";
+      el.innerHTML = '<div class="bg-white border border-zinc-200 rounded-2xl rounded-bl-md px-4 py-3.5 flex items-center gap-1.5">'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span>'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span>'
+        + '<span class="typing-dot w-1.5 h-1.5 rounded-full bg-indigo-500"></span></div>';
+      chatBox.appendChild(el);
+      scrollToBottom();
+    }
+    function removeLoading() {
+      const el = document.getElementById("loadingBubble");
+      if (el) el.remove();
+    }
+
+    function restorePublicChat() {
+      const history = getPublicHistory();
+      if (!history.length) return;
+      history.forEach((m) => {
+        if (m.role === "user") appendUserMessage(m.content);
+        else appendBotMessage(m.content, m.sources || []);
+      });
+    }
+
+    async function sendQuestion(question) {
+      appendUserMessage(question);
+      pushHistory({ role: "user", content: question });
+      appendLoading();
+      sendBtn.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: question, role: "mahasiswa" }),
+        });
+        const data = await res.json();
+        removeLoading();
+        if (!res.ok) {
+          const msg = data.detail || "Terjadi kesalahan saat memproses pertanyaan.";
+          appendBotMessage(msg, []);
+          pushHistory({ role: "bot", content: msg, sources: [] });
+          return;
+        }
+        appendBotMessage(data.answer, data.sources);
+        pushHistory({ role: "bot", content: data.answer, sources: data.sources || [] });
+      } catch (err) {
+        removeLoading();
+        const msg = "Tidak dapat terhubung ke server. Pastikan server Uvicorn masih berjalan.";
+        appendBotMessage(msg, []);
+        pushHistory({ role: "bot", content: msg, sources: [] });
+      } finally {
+        sendBtn.disabled = false;
+        questionInput.focus();
+      }
+    }
+
+    function askSuggestion(btn) {
+      sendQuestion(btn.getAttribute("data-q"));
+    }
+
+    chatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const q = questionInput.value.trim();
+      if (!q) return;
+      questionInput.value = "";
+      questionInput.style.height = "auto";
+      sendQuestion(q);
+    });
+
+    questionInput.addEventListener("input", function () {
+      this.style.height = "auto";
+      this.style.height = Math.min(this.scrollHeight, 160) + "px";
+    });
+    questionInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); chatForm.requestSubmit(); }
+    });
+
+    // ---- Source preview modal ----
+    const sourceModal = document.getElementById("sourceModal");
+
+    async function openSourceModal(docId) {
+      const body = document.getElementById("sourceModalBody");
+      document.getElementById("sourceModalTitle").textContent = "Memuat dokumen...";
+      document.getElementById("sourceModalMeta").textContent = "";
+      body.innerHTML = '<p class="text-zinc-400 text-sm">Memuat isi dokumen...</p>';
+      sourceModal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      try {
+        const res = await fetch("/api/public/documents/" + docId + "?role=mahasiswa");
+        const data = await res.json();
+        if (!res.ok) {
+          body.innerHTML = '<p class="text-rose-600 text-sm">' + escapeHtml(data.detail || "Dokumen tidak ditemukan.") + "</p>";
+          document.getElementById("sourceModalTitle").textContent = "Dokumen tidak tersedia";
+          return;
+        }
+        document.getElementById("sourceModalTitle").textContent = data.document.title;
+        document.getElementById("sourceModalMeta").textContent =
+          data.document.file_type.toUpperCase() + " · " + data.document.total_chunks + " chunks";
+        document.getElementById("sourceModalDownload").href = data.url;
+        body.innerHTML = '<div class="prose-chat">' + formatMarkdown(data.content || "Isi dokumen tidak dapat ditampilkan.") + "</div>";
+      } catch (err) {
+        body.innerHTML = '<p class="text-rose-600 text-sm">Gagal memuat dokumen.</p>';
+      }
+    }
+
+    function closeSourceModal() {
+      sourceModal.classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    sourceModal.addEventListener("click", function (e) { if (e.target === sourceModal) closeSourceModal(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSourceModal(); });
+
+    restorePublicChat();
+    questionInput.focus();
+  </script>
+</body>
+</html>

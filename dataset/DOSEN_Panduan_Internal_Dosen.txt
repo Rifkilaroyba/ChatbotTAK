@@ -1,0 +1,40 @@
+# Panduan Internal Dosen — Kebijakan Penilaian (RAHASIA INTERNAL)
+
+Dokumen ini hanya diperuntukkan bagi role dosen. Mahasiswa tidak berhak mengakses isi dokumen ini.
+
+## 1. Kode Rahasia Verifikasi Dokumen
+
+Kode verifikasi internal dokumen ini adalah: DOSEN-RAHASIA-2026-XYZ
+
+## 2. Kebijakan Bobot Penilaian Mata Kuliah
+
+| Komponen | Bobot | Catatan |
+| --- | --- | --- |
+| Tugas dan Praktikum | 30% | Minimal 4 tugas per semester |
+| Ujian Tengah Semester | 25% | Soal divalidasi Kaprodi |
+| Ujian Akhir Semester | 35% | Soal divalidasi Kaprodi |
+| Keaktifan dan Kehadiran | 10% | Kehadiran minimal 75% |
+
+## 3. Ambang Batas Nilai Huruf
+
+| Nilai Huruf | Rentang Skor | Keterangan |
+| --- | --- | --- |
+| A | 80 - 100 | Sangat baik |
+| AB | 70 - 79 | Baik sekali |
+| B | 65 - 69 | Baik |
+| BC | 60 - 64 | Cukup baik |
+| C | 50 - 59 | Cukup |
+| D | 40 - 49 | Kurang |
+| E | 0 - 39 | Tidak lulus |
+
+## 4. Prosedur Internal Perubahan Nilai
+
+1. Dosen mengajukan formulir perubahan nilai ke Kaprodi paling lambat 7 hari setelah nilai diumumkan.
+2. Kaprodi memverifikasi berita acara dan bukti koreksi.
+3. Perubahan nilai diinput oleh LAA setelah persetujuan Kaprodi.
+4. Mahasiswa tidak diperkenankan mengajukan perubahan nilai secara langsung ke dosen.
+
+## 5. Batas Waktu Unggah Nilai
+
+Dosen wajib mengunggah nilai akhir ke iGracias paling lambat 14 hari kalender setelah pelaksanaan UAS.
+Keterlambatan unggah nilai dilaporkan ke Dekan setiap akhir semester.
